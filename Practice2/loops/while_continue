@@ -4,3 +4,16 @@ while i < 6:
   if i == 3:
     continue
   print(i)
+
+5
+ 5 1 2 3 4
+1
+2
+3
+4
+
+
+for x in range(5):
+  x = (int(input))
+
+   
