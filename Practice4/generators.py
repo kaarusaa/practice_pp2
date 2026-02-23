@@ -7,6 +7,7 @@ for i in n:
     print (i, end = " ")
 
 
+
 def evens(x):
     for i in range(0, x+1):
         if i % 2 == 0:
@@ -17,12 +18,14 @@ for i in n:
     print(i, end = ", ")
 
 
+
 def div(x):
     for i in range(0, x+1):
         if i % 3 == 0 and i % 4 == 0:
             yield i
 
 print(", ".join(map(str, div(int(input())))))
+
 
 
 def squares(a, b):
@@ -34,6 +37,7 @@ b = int(input())
 
 for value in squares(a, b):
     print(value)
+
 
 
 def func(x):
