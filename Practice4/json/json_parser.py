@@ -1,7 +1,7 @@
 import json
 
 # 1. Загрузка данных
-with open("sample-data.json", "r") as f:
+with open(r"C:\Users\Акниет\Desktop\practice_pp2\Practice4\json\sample-data.json", "r") as f:
     data = json.load(f)
 
 # 2. Заголовок таблицы
