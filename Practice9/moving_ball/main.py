@@ -16,13 +16,12 @@ circle_start_h = 350
 
 while not done:
     
-    keys = pygame.key.get_pressed()
-    pygame.draw.circle(screen, RED, (circle_start_w, circle_start_h), 25)
+    keys = pygame.key.get_pressed() #удерживание клавиш
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
     if keys[pygame.K_UP]:
-        if (circle_start_h > 38):
+        if (circle_start_h > 38): #38 радиус круга с запасом
             circle_start_h -= 20
     if keys[pygame.K_DOWN]:
         if (circle_start_h < 662):
