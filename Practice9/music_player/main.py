@@ -28,7 +28,6 @@ TEXT = (240, 240, 240)
 SUBTEXT = (140, 140, 140)
 HIGHLIGHT = (255, 80, 80)
 BLACK = (0, 0, 0)
-cur_pos = 0
 
 font = pygame.font.Font(None, 32)
 small_font = pygame.font.Font(None, 22)
@@ -53,7 +52,7 @@ def get_start(h,m,s):
     if (h < 10):
         if (m < 10):
             if (s < 10):
-                return font.render(f"0{h:.0f}:0{m:.0f}:0{s:.0f}", True, BLACK)
+                return font.render(f"0{h:.0f}:0{m:.0f}:0{s:.0f}", True, BLACK) #преобразует текст в изображение
             else:
                 return font.render(f"0{h:.0f}:0{m:.0f}:{s:.0f}", True, BLACK)
         elif (s < 10):
@@ -78,7 +77,7 @@ while not done:
         circle_x = 200 + progress_ratio * 900
     else:
         circle_x = 200
-    if pygame.mixer.music.get_busy():
+    if pygame.mixer.music.get_busy(): # если музыка играет
         current_times = pygame.mixer.music.get_pos() / 1000
     screen.fill(BG)
 
@@ -87,19 +86,19 @@ while not done:
 
 # текущий трек (центр)
     song_name = os.path.basename(songs[music_index])
-    name_surface = font.render(song_name, True, TEXT)
+    name_surface = font.render(song_name, True, HIGHLIGHT)
     screen.blit(name_surface, (50, 60))
 
-# прогресс бар
+# прогресс 
     pygame.draw.line(screen, SUBTEXT, (50, 200), (550, 200), 3)
 
     if durations[music_index] > 0:
-     progress_ratio = current_times / durations[music_index]
-     circle_x = 50 + progress_ratio * 500
+        progress_ratio = current_times / durations[music_index]
+        circle_x = 50 + progress_ratio * 500
     else:
-     circle_x = 50
+        circle_x = 50
 
-    pygame.draw.line(screen, ACCENT, (50, 200), (circle_x, 200), 4)
+    pygame.draw.line(screen, ACCENT, (50, 200), (circle_x, 200), 4) #зеленая линия прогресса
     pygame.draw.circle(screen, ACCENT, (circle_x, 200), 6)
 
 # время
@@ -117,31 +116,16 @@ while not done:
 
 # список треков (компактный)
     for i, s in enumerate(songs):
-     s0 = os.path.basename(s)
-     color = TEXT if s0 != song_name else HIGHLIGHT
-     name = small_font.render(f'{i+1}. {s0}', True, color)
-     screen.blit(name, (50, 260 + i*20))
+        s0 = os.path.basename(s)
+        color = TEXT if s0 != song_name else HIGHLIGHT
+        name = small_font.render(f'{i+1}. {s0}', True, color)
+        screen.blit(name, (50, 260 + i*20))
 
 # управление
     controls = small_font.render("P Play | S Pause | N Next | B Back | Q Quit", True, SUBTEXT)
     screen.blit(controls, (50, 330))
 
     w = 300
-    
-    pygame.draw.line(screen, BLACK, (200, 450), (1100,450), 2)
-
-    add = durations[music_index]/900
-
-    h = current_times//3600
-    m = current_times//60
-    s = current_times%60
-
-    start = get_start(h,m,s)
-    end = get_start(durations[music_index]//3600, durations[music_index]//60, durations[music_index]%60)        
-    # end = font.render(f"{durations[music_index]//3600:.0f}:{durations[music_index]//60:.0f}:{durations[music_index]%60:.0f}", True, BLACK)
-
-    screen.blit(start, (210,420))
-    screen.blit(end, (1050,420))
 
     for event in pygame.event.get():
         
@@ -157,13 +141,12 @@ while not done:
                 elif not pygame.mixer.music.get_busy():
                     pygame.mixer.music.load(songs[music_index])
                     pygame.mixer.music.play()
-                    pygame.mixer.music.set_endevent(pygame.USEREVENT + 1)
+                    pygame.mixer.music.set_endevent(pygame.USEREVENT + 1) #событие, когда закончится трек
             elif event.key == pygame.K_s:
                 if pygame.mixer.music.get_busy():
                     pygame.mixer.music.pause()
                     is_paused = True
             elif event.key == pygame.K_n:
-                cur_pos = 0
                 play_next()
                 is_paused = False
             elif event.key == pygame.K_b:

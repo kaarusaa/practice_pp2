@@ -43,7 +43,7 @@ while not done:
     rotated_hours   = pygame.transform.rotate(hand_r_base, hours_angle)
 
 
-    minutes_rect = rotated_minutes.get_rect(center=(580, 300))
+    minutes_rect = rotated_minutes.get_rect(center=(650, 320))
     hours_rect   = rotated_hours.get_rect(center=(620,346))
 
     # Draw everything
