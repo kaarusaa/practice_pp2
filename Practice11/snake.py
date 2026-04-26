@@ -1,5 +1,7 @@
 import pygame
 import random
+import time
+import datetime
 
 pygame.init()
 
@@ -22,6 +24,9 @@ image_game_over_rect = image_game_over.get_rect(center = (width // 2, height // 
 sc_rect = image_game_over.get_rect(center = (width // 2, height // 2 + 30))
 
 CELL = 30 # One snake cell size
+
+ccoldown_start = 0
+cooldown_time = 5000
 
 def draw_grid(): # Draw cell borders
     for i in range(height // CELL):
@@ -94,7 +99,7 @@ class Snake:
         head = self.body[0]
         # Check if snake eats food
         if head.x == food.pos.x and head.y == food.pos.y:
-            self.score +=1
+            self.score += (food.n+1)
             print("Got food!")
             self.body.append(Point(head.x, head.y)) # Grow snake
             food.generate_random_pos(self.body) # Generate new food
@@ -102,19 +107,25 @@ class Snake:
 
 class Food:
     def __init__(self):
+        self.colors = [green, blue, red]
+        self.n = random.randint(0,2) # 0,1,2 for green, blue, red food
         self.pos = Point(9, 9)
+        self.colors = pygame.time.get_ticks()
 
     def draw(self):
+        self.cooldown_start = pygame.time.get_ticks()
         pygame.draw.rect(screen, green, (self.pos.x * CELL, self.pos.y * CELL, CELL, CELL))
 
     def generate_random_pos(self, snake_body):
+        self.n = random.randint(0,2) # 0,1,2 for green, blue, red food
+        self.cooldown_start = pygame.time.get_ticks()
         while True:
             self.pos.x = random.randint(0, width // CELL - 1)
             self.pos.y = random.randint(0, height // CELL - 1)
             # Prevent food spawning: inside snake body and in top row (UI row)
             if not any(self.pos.x == s.x and self.pos.y == s.y for s in snake_body) and self.pos.y > 0:
                 break
-
+        food.draw() # Draw new food immediately after generating new position
 
 
 FPS = 5
@@ -123,6 +134,9 @@ food = Food()
 snake = Snake()
 food.generate_random_pos(snake.body)  
 running = True
+a = False
+current_time = pygame.time.get_ticks()
+
 while running:
     score = snake.score
     level = snake.level
@@ -135,7 +149,8 @@ Level: {level}"""
         screen.blit(image_game_over, image_game_over_rect)
         screen.blit(sc_r, sc_rect)
         pygame.display.flip()
-        pygame.time.wait(10000) # Wait 10 seconds
+        time.sleep(4)
+        running = False
 
     sc = font.render(f'Score: {score}', True, white)
     lv = font.render(f'Level: {level}', True, white)   
@@ -164,10 +179,11 @@ Level: {level}"""
     snake.check_collision(food)
 
     snake.draw()
-    
-
-# For the initial food position, either call it after both are created:
-    food.draw()
+    if abs(current_time - food.cooldown_start) > cooldown_time: # If food has been on screen for too long, respawn it
+        food.generate_random_pos(snake.body)
+        food.draw()
+        current_time = pygame.time.get_ticks() # Reset cooldown timer
+    else: food.draw()
     screen.blit(sc, (2, 0))
     screen.blit(lv, (120, 0))
     pygame.display.flip()

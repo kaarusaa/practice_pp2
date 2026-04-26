@@ -30,6 +30,7 @@ def main():
     r = pygame.Rect(30, 150, 30, 30)
     g = pygame.Rect(30, 200, 30, 30)
     b = pygame.Rect(30, 250, 30, 30)
+
     while True:
         pressed = pygame.key.get_pressed()
         mouse_pos = pygame.mouse.get_pos()
@@ -37,8 +38,6 @@ def main():
         alt_held = pressed[pygame.K_LALT] or pressed[pygame.K_RALT]
         ctrl_held = pressed[pygame.K_LCTRL] or pressed[pygame.K_RCTRL]
         for event in pygame.event.get():
-            
-            # determin if X was clicked, or Ctrl+W or Alt+F4 was used
             if event.type == pygame.QUIT:
                 return
             
@@ -50,12 +49,10 @@ def main():
                     return
                 if event.key == pygame.K_ESCAPE:
                     return
-                # Toggle drawing preview
+                
                 if event.key == pygame.K_p:
                     drawing = not drawing
-            
-                # determine if a letter key was pressed
-                
+                # determine if a letter C was pressed
                 elif event.key == pygame.K_c:
                     mode = 'erase'
                     if points:   
@@ -106,6 +103,7 @@ def main():
                     if points:   
                         strokes.append((points.copy(), mode, radius))
                     points = []   # start a new continuous line
+
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1 and (points or figures):
                     if drawing_mode == 1:
@@ -133,7 +131,7 @@ def main():
 
         
 
-        # --- Draw all saved strokes ---
+        # Draw all saved strokes
         for pts, col_mode, rad in strokes:
             for i in range(len(pts) - 1):
                 drawLineBetween(screen, i, pts[i], pts[i+1], rad, col_mode)
@@ -142,7 +140,7 @@ def main():
             st, et = coords[0]
             drawfig(screen, 0, st, et, rad, col_mode,d_mode)
 
-        # --- Draw the current stroke (if drawing is enabled) ---
+        # Draw the current stroke (if drawing is enabled)
         if drawing:
             if drawing_mode == 1:
                 for i in range(len(points) - 1):
@@ -205,11 +203,12 @@ def drawLineBetween(screen, index, start, end, width, color_mode):
     elif color_mode == 'erase':
         color = (0,0,0)
     
+    #calculating how many points need to be drawn between two mouse positions
     dx = start[0] - end[0]
     dy = start[1] - end[1]
-    iterations = max(abs(dx), abs(dy))  # Number of interpolation steps\
+    iterations = max(abs(dx), abs(dy)) 
     
-    # Draw many circles between pointsto make smooth thick line
+    # Draw many circles between points to make smooth thick line
     for i in range(iterations):
         progress = 1.0 * i / iterations
         aprogress = 1 - progress
