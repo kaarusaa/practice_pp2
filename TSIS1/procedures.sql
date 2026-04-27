@@ -9,10 +9,10 @@ CREATE OR REPLACE PROCEDURE add_phone(
     p_contact_name VARCHAR,
     p_phone        VARCHAR,
     p_type         VARCHAR DEFAULT 'mobile'
-)
+) -- input parameters
 LANGUAGE plpgsql AS $$
 DECLARE
-    v_contact_id INTEGER;
+    v_contact_id INTEGER; --A variable to store the contact’s ID
 BEGIN
     -- Resolve contact by first_name (or "first last" composite)
     SELECT id INTO v_contact_id
@@ -20,6 +20,9 @@ BEGIN
     WHERE LOWER(first_name || COALESCE(' ' || last_name, '')) = LOWER(TRIM(p_contact_name))
        OR LOWER(first_name) = LOWER(TRIM(p_contact_name))
     LIMIT 1;
+    --LOWER(...) → case-insensitive
+    --TRIM(...) → removes extra spaces
+    --COALESCE(...) → handles NULL last names
 
     IF v_contact_id IS NULL THEN
         RAISE EXCEPTION 'Contact "%" not found.', p_contact_name;
@@ -61,10 +64,12 @@ BEGIN
     END IF;
 
     -- Upsert group
+    --Create group if needed
     INSERT INTO groups (name)
     VALUES (p_group_name)
     ON CONFLICT (name) DO NOTHING;
 
+    --Get group ID
     SELECT id INTO v_group_id FROM groups WHERE name = p_group_name;
 
     UPDATE contacts SET group_id = v_group_id WHERE id = v_contact_id;
@@ -88,6 +93,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql AS $$
 DECLARE
+    --Create search pattern
     v_pattern TEXT := '%' || LOWER(TRIM(p_query)) || '%';
 BEGIN
     RETURN QUERY
@@ -98,17 +104,21 @@ BEGIN
         c.email,
         c.birthday,
         g.name AS group_name
+    --Join tables
     FROM contacts c
     LEFT JOIN groups g  ON g.id  = c.group_id
     LEFT JOIN phones ph ON ph.contact_id = c.id
+    --Search across multiple fields
     WHERE
         LOWER(c.first_name)                          LIKE v_pattern
         OR LOWER(COALESCE(c.last_name,  ''))         LIKE v_pattern
         OR LOWER(COALESCE(c.email,      ''))         LIKE v_pattern
         OR LOWER(COALESCE(ph.phone,     ''))         LIKE v_pattern
+    --Sorting
     ORDER BY c.first_name, c.last_name;
 END;
 $$;
+
 CREATE OR REPLACE FUNCTION get_contacts_paginated(p_limit INTEGER, p_offset INTEGER)
 RETURNS TABLE (
     id         INTEGER,
@@ -124,7 +134,7 @@ BEGIN
     RETURN QUERY
     SELECT * FROM contacts
     ORDER BY first_name, last_name
-    LIMIT p_limit
-    OFFSET p_offset;
+    LIMIT p_limit --how many rows to show
+    OFFSET p_offset; --how many rows to skip
 END;
 $$;

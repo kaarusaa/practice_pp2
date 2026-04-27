@@ -187,14 +187,14 @@ def sort_and_list():
     """List all contacts sorted by name, birthday, or date added."""
     print("\nSort by:  1) Name   2) Birthday   3) Date added")
     choice = input("Choice [1]: ").strip() or "1"
-    order_map = {"1": "c.first_name, c.last_name", "2": "c.birthday NULLS LAST", "3": "c.created_at"}
+    order_map = {"1": "c.first_name, c.last_name", "2": "c.birthday NULLS LAST", "3": "c.created_at"} #Mapping user input to SQL
     order = order_map.get(choice, "c.first_name, c.last_name")
 
     with _conn() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(f"SELECT id FROM contacts c ORDER BY {order}")
-            ids = [r["id"] for r in cur.fetchall()]
-        results = _fetch_contacts_with_phones(conn, ids)
+            ids = [r["id"] for r in cur.fetchall()] #Extract IDs
+        results = _fetch_contacts_with_phones(conn, ids) #Fetch full contact data
     _print_contacts(results)
 
 
@@ -276,6 +276,7 @@ def _upsert_contact_from_dict(conn, data, on_duplicate="ask"):
     Insert or overwrite a contact from a dict.
     on_duplicate: 'skip' | 'overwrite' | 'ask'
     """
+    #Extract and validate name
     first = (data.get("first_name") or "").strip()
     last  = (data.get("last_name")  or "").strip() or None
     if not first:
@@ -284,12 +285,13 @@ def _upsert_contact_from_dict(conn, data, on_duplicate="ask"):
 
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(
-            "SELECT id FROM contacts WHERE first_name = %s AND "
+            "SELECT id FROM contacts WHERE first_name = %s AND " #Check for duplicate
             "(last_name = %s OR (last_name IS NULL AND %s IS NULL))",
             (first, last, last),
         )
         existing = cur.fetchone()
 
+    #Handle duplicates
     if existing:
         action = on_duplicate
         if action == "ask":
@@ -308,7 +310,7 @@ def _upsert_contact_from_dict(conn, data, on_duplicate="ask"):
     if group_name:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO groups (name) VALUES (%s) ON CONFLICT (name) DO NOTHING",
+                "INSERT INTO groups (name) VALUES (%s) ON CONFLICT (name) DO NOTHING", #Resolve group
                 (group_name,),
             )
             cur.execute("SELECT id FROM groups WHERE name = %s", (group_name,))
@@ -316,15 +318,16 @@ def _upsert_contact_from_dict(conn, data, on_duplicate="ask"):
             if row:
                 group_id = row[0]
 
+    #Parse extra fields
     birthday = _parse_date(data.get("birthday"))
     email    = (data.get("email") or "").strip() or None
 
     with conn.cursor() as cur:
         cur.execute(
             """
-            INSERT INTO contacts (first_name, last_name, email, birthday, group_id)
+            INSERT INTO contacts (first_name, last_name, email, birthday, group_id) 
             VALUES (%s, %s, %s, %s, %s) RETURNING id
-            """,
+            """, #Insert contact
             (first, last, email, birthday, group_id),
         )
         contact_id = cur.fetchone()[0]
@@ -338,7 +341,7 @@ def _upsert_contact_from_dict(conn, data, on_duplicate="ask"):
     with conn.cursor() as cur:
         for p in phones:
             ph_type = (p.get("type") or "mobile").lower()
-            if ph_type not in ("home", "work", "mobile"):
+            if ph_type not in ("home", "work", "mobile"): #Validate phone type
                 ph_type = "mobile"
             cur.execute(
                 "INSERT INTO phones (contact_id, phone, type) VALUES (%s, %s, %s)",
@@ -351,20 +354,24 @@ def _upsert_contact_from_dict(conn, data, on_duplicate="ask"):
 
 def import_from_json(filepath=None):
     """Import contacts from a JSON file with duplicate handling."""
+    #Get file path
     if filepath is None:
         filepath = input("JSON file path [contacts_export.json]: ").strip() or "contacts_export.json"
+    #Check if file exists
     if not os.path.exists(filepath):
         print(f"  ✗  File not found: {filepath}")
         return
-
+    #Load JSON data
     with open(filepath, encoding="utf-8") as f:
         records = json.load(f)
 
     print(f"Found {len(records)} records in '{filepath}'.")
+    #Choose duplicate handling mode
     mode = input("On duplicate — [A]sk each / [S]kip all / [O]verwrite all [A]: ").strip().lower()
     on_dup = {"s": "skip", "o": "overwrite"}.get(mode, "ask")
 
     with _conn() as conn:
+        #Process each record
         for rec in records:
             _upsert_contact_from_dict(conn, rec, on_duplicate=on_dup)
     print("✅  Import complete.")
@@ -377,18 +384,21 @@ def import_from_csv(filepath=None):
     Expected columns:
         first_name, last_name, email, birthday, group, phone, phone_type
     """
+    #Get file path
     if filepath is None:
         filepath = input("CSV file path [contacts.csv]: ").strip() or "contacts.csv"
     if not os.path.exists(filepath):
         print(f"  ✗  File not found: {filepath}")
         return
-
+    #Choose duplicate handling mode
     mode = input("On duplicate — [A]sk each / [S]kip all / [O]verwrite all [A]: ").strip().lower()
     on_dup = {"s": "skip", "o": "overwrite"}.get(mode, "ask")
 
     imported = 0
+    #Open database + file together
     with _conn() as conn, open(filepath, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
+        reader = csv.DictReader(f) #Read CSV as dictionaries
+        #Process each row
         for row in reader:
             _upsert_contact_from_dict(conn, row, on_duplicate=on_dup)
             imported += 1
@@ -401,7 +411,7 @@ def import_from_csv(filepath=None):
 
 def call_add_phone():
     """Console wrapper for the add_phone stored procedure."""
-    name  = input("Contact name: ").strip()
+    name  = input("Contact name: ").strip() #removing whitespace from user input
     phone = input("Phone number: ").strip()
     ptype = input("Type (home/work/mobile) [mobile]: ").strip().lower() or "mobile"
     with _conn() as conn:
